@@ -6,8 +6,11 @@ Flask-WTF
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Login
-psycopg2
+Flask-OpenId
 WTForms
+psycopg2
+beautifulsoup4
+requests
 
 # ----------------------
 # Production Server
