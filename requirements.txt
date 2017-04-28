@@ -9,8 +9,14 @@ Flask-Login
 Flask-OpenId
 WTForms
 psycopg2
-beautifulsoup4
+BeautifulSoup
 requests
+passlib
+
+# ----------------------
+# Testing
+# ----------------------
+mock
 
 # ----------------------
 # Production Server

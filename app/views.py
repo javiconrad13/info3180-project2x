@@ -6,11 +6,14 @@ This file creates your application.
 """
 
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
-from forms import LoginForm, RegisterForm
-from models import UserProfile
+from forms import LoginForm, RegisterForm, WishForm
+from models import UserProfile, Wish
 import random
+import requests
+import BeautifulSoup
+import urlparse
 
 ###
 # Routing for your application.
@@ -59,7 +62,7 @@ def register():
         email = form.email.data
         password  = form.password.data
     
-        user = UserProfile(id=userid,
+        user = UserProfile(id=userid, 
                            firstname=firstname,
                            lastname=lastname, 
                            email=email,
@@ -84,7 +87,7 @@ def load_user(id):
 def secure_page():
     return render_template('secure-page.html')
     
-@app.route("/logout")
+@app.route("/api/users/logout")
 @login_required
 def logout():
     logout_user()
@@ -92,8 +95,83 @@ def logout():
     return redirect(url_for('home'))
 
 ###
+#Wishlist
+###
+@app.route('/api/users/<userid>/wishlist/', methods=["GET","POST"])
+def wishlist(userid):
+    if request.method=="GET":
+        user = db.session.query(UserProfile).filter_by(id=userid).first()
+        wishes = db.session.query(Wish).filter_by(userid=user.id).all()
+        wishlist = []
+        
+        for wish in wishes:
+            wishlist.append({'title':wish.title,'url':wish.url,'thumbnail':wish.thumbnail,'description':wish.description})
+        if(len(wishlist)>0):
+            response = jsonify({"error":"null","data":{"user":user.firstname + " " + user.lastname, "wishes":wishlist},"message":"Success"})
+        else:
+            response = jsonify({"error":"1","data":{},"message":"Unable to get wishes"})
+        return response
+    else:
+        user = db.session.query(UserProfile).filter_by(id=userid).first()
+        json_data = json.loads(request.data)
+        wish = Wish(user.id,json_data.get('url'),json_data.get('thumbnail'),json_data.get('title'),json_data.get('description'))
+        if wish:
+            db.session.add(wish)
+            db.session.commit()
+            response = jsonify({"error":"null","data":{'userid':userid,'url':json_data.get('url'),'thumbnail':wish.thumbnail,'title':json_data.get('title'),'description':json_data.get('description')},"message":"Success"})
+        else:
+            response = jsonify({"error":"1", "data":{},'message':'did not create wish'})
+        return response    
+
+#NEEDS WORK - Avoiding for now
+@app.route('/api/users/<userid>/wishlist/<itemid>', methods=["DELETE"])
+def removeWish(userid, itemid):
+    user = db.session.query(UserProfile).filter_by(id=userid).first()
+    if not user:
+        response = jsonify({'message':'User not found'})
+        response.status_code = 404
+        return response
+    itemlist = map(lambda x: x.id , user.items)
+    if not int(itemid) in itemlist:
+        response = jsonify({'message': 'No such item'})
+        response.status_code = 404
+        return response
+    db.session.query(Wish).filter_by(id=itemid).delete()
+    db.session.commit()
+    response = jsonify({})
+    response.status_code = 204
+    return response
+    
+###
 # The functions below should be applicable to all Flask apps.
 ###
+@app.route('/api/thumbnails/', methods=["GET"])
+def imgs():
+    url = "http://s5.photobucket.com/"
+    #url = request.args.get('url')
+    soup = BeautifulSoup.BeautifulSoup(requests.get(url).text)
+    images = BeautifulSoup.BeautifulSoup(requests.get(url).text).findAll("img")
+    imagelist = []    
+    
+    og_image = (soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'}))
+                        
+    if og_image and og_image['content']:
+        imagelist.append(urlparse.urljoin(url, og_image['content']))
+    
+    thumbnail_spec = soup.find('link', rel='image_src')
+    if thumbnail_spec and thumbnail_spec['href']:
+        imagelist.append(urlparse.urljoin(url, thumbnail_spec['href']))
+    
+    for img in images:
+        if "sprite" not in img["src"]:
+            imagelist.append(urlparse.urljoin(url, img['src']))
+
+    if(len(imagelist)>0):
+        response = jsonify({'error':'null', "data":{"thumbnails":imagelist},"message":"Success"})
+    else:
+        response = jsonify({'error':'1','data':{},'message':'Unable to extract thumbnails'})
+    return response
+
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):

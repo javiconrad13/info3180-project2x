@@ -4,7 +4,7 @@
   <div class="login-form center-block">
     <h2>Please Log in</h2>
     {% include 'flash_messages.html' %}
-    <form action="{{ url_for('login') }}" method="post" enctype="multipart/form-data">
+    <form action="{{ url_for('login') }}" method="post">
       {{ form.csrf_token }}
       <div class="form-group">
         {{ form.email.label }}
@@ -19,3 +19,5 @@
     </form>
   </div>
 {% endblock %}
+
+<!-- We can add a "dont have an account? sign up here: -->
