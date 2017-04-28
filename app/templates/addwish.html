@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block main %}
+
+<script>
+    var app = angular.module('myApp', []);
+    app.controller('myCtrl', function($scope, $http) {
+        $scope.scrape=function(){
+            $http.get("/api/thumbnails", {params: {url: $scope.scrape_url}})
+             .then(function(response) {
+             $scope.thumbnails = response.data.thumbnails;
+             });
+        }
+    });
+</script>
+        
+<div id = 'content' ng-controller="thumbnailCtrl">
+    <h1>Add to Wishlist:</h1>
+    <br><br>
+    <form method="post" enctype="multipart/form-data" class="add-entry" action="{{ url_for('wishlist_add', userid=userid) }}">
+
+    <div id='url'>Url: {{form.url(**{'ng-model':'url'})}} 
+    <div class='btn btn-success' ng-click='open()'>Select Image</div>
+    <br><br><br>
+    Title: {{form.title}}
+    <br><br><br>
+    Description: {{form.description}}
+    <br><br>
+    </div>
+    <img id="chosen_img" src='{| img_url |}' alt="Thumbnail">
+   {{form.thumbnail(**{'ng-model':'img_url', 'hidden':true})}}
+   <br><br>
+    <button type="submit" name="submit" class="btn btn-primary btn-block">ADD</button>
+</div>  
+   {{ form.csrf_token }}  
+   
+</form>
+       
+{% endblock %}

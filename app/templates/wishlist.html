@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{
+
+{% block main %}
+    <h2>Wishlist</h2>
+    {% include 'flash_messages.html' %}
+    <hr/>
+    <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#newItem">New Item</button>
+    
+    {% for wish in wishes %}
+        <div class="item">
+        <form  action="{{ url_for('removeWish', userid=user.id, itemid=item.id) }}" method="delete">
+            <button type="submit" name="submit"  class="close">&times;</button>
+        </form>
+            <div>
+                <div><img class="item-thumbnail" src="{{ wishes.thumbnail }}"/></div>
+                <div class="item-title"><strong>{{ wishes.title }}</strong></div><br/>
+                <div class="item-description">{{ wishes.description }}</div><br/>
+                <div class="item-webaddress"><a href="{{ wishes.url }}">Link</a></div>
+            </div>
+        </div>
+    {% endfor %}
+
+<div class="modal fade" ng-controller="NewItemCtrl" id="newItem">
+    <script type="text/ng-template" id="myModalContent.html">
+        <div class="modal-header">
+            <h3 class="modal-title">Choose a thumbnail</h3>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-xs-6 col-md-3" ng-repeat="image in images track by $index">
+                    <a href="#" class="thumbnail"><img src="{$ image $}" alt="..." ng-click='selectimg(image)'></a>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
+            <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
+        </div>
+    </script>
+    <h2>Make a Wish</h2>
+    <form action="{{ url_for('wishlist',userid=current_user.get_id()) }}" method="POST" enctype="multipart/form-data" >
+        <div class="form-group">
+            {{ form.url.label }}
+            <div>
+                {{ form.url(class='form-control', placeholder="Paste website url here", **{'ng-model':'prod_url'}) }}
+            </div>
+            <div>
+                <div class="btn btn-info" ng-click="search()">Search</div>
+            </div>
+        </div>  
+        <div class="form-group">
+            {{ form.title.label }}
+            {{ form.title(class='form-control', placeholder="Enter item title") }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(class='form-control', placeholder="Enter item descripton") }}
+        </div>
+        <div class-"form-group" hidden>
+            <label>Image URL</label>
+            {{ form.thumbnail(class_='form-control', **{'ng-model':'img_url'}) }}
+        </div>
+        <div ng-if='selectedimg != ""'>
+            form.thumbnail.label
+            <img style="width: 100px;" src='{$ selectedimg $}'>
+        </div>
+
+        <button type="submit" name="submit" class="btn btn-primary btn-block">Add Item</button>
+    </form>
+</div>
+<!--
+
+    <div class="modal fade" id="newItem" role="dialog">
+        <div class="modal-dialog">
+
+            <div class="modal-content">
+
+                <form  ng-app="myApp" ng-controller="myCtrl" action="{{ url_for('wishlist',userid=current_user.get_id()) }}" method="post">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">New Item</h4>
+                    </div>
+
+                    <div class="modal-body">
+                        {{ form.csrf_token }}
+                        <div class="form-group">
+                            {{ form.url.label }}
+                            <div>{{ form.url(class='form-control', placeholder="Paste website url here", **{'ng-model':'scrape_url' , 'ng-keyup':'scrape()'}) }}</div>
+                        </div>                        
+                        <div class="form-group">
+                            {{ form.title.label }}
+                            {{ form.title(class='form-control', placeholder="Enter item title") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.description.label }}
+                            {{ form.description(class='form-control', placeholder="Enter item descripton") }}
+                        </div>
+
+                        {% raw %}
+                        <div>
+                            <div ng-repeat="thumb in thumbnails track by $index">
+                                <div class="thumbnail">
+                                    <input type="radio" name="thumbnail" value="{{ thumb }}" required>
+                                    <img src="{{ thumb }}">
+                                </div>
+                            </div>
+
+                        </div>
+                        {% endraw %}
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" name="submit" class="btn btn-primary btn-block">Add Item</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+-->
+{% endblock %}

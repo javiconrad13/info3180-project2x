@@ -97,9 +97,44 @@ def logout():
 ###
 #Wishlist
 ###
-@app.route('/api/users/<userid>/wishlist/', methods=["GET","POST"])
-def wishlist(userid):
-    if request.method=="GET":
+@app.route("/api/users/<userid>/wishlist", methods=["GET","POST"])
+def wishlist(userid): 
+    form = WishForm()
+    form2= LoginForm()
+    
+    if request.method == "POST":
+        if form.validate_on_submit():
+            user = db.session.query(UserProfile).filter_by(id=userid).first()
+            url = form.url.data
+            thumbnail = form.thumbnail.data
+            title = form.thumbnail.data
+            description = form.description.data
+            
+            wish = Wish(url = url,
+                            thumbnail = thumbnail,
+                            title = title,
+                            description = description,
+                            userid = user.id)
+    
+            if wish:
+                db.session.add(wish)
+                db.session.commit()
+                flash(''+title+' was added to your wishlist', 'success')
+                response = jsonify({"error":"null",
+                                    "data":{'userid':userid,
+                                            'url':url,
+                                            'thumbnail':thumbnail,
+                                            'title':title,
+                                            'description':description},
+                                    "message":"Success"})
+                return redirect(url_for('wishlist', userid=user.id))
+            else:
+                response = jsonify({"error":"1", 
+                                    "data":{}, 
+                                    "message":"Wish not created"})
+                flash('Invalid item data, please try again', 'danger')
+            return redirect(url_for('wishlist', userid=user.id))
+    else:
         user = db.session.query(UserProfile).filter_by(id=userid).first()
         wishes = db.session.query(Wish).filter_by(userid=user.id).all()
         wishlist = []
@@ -110,18 +145,7 @@ def wishlist(userid):
             response = jsonify({"error":"null","data":{"user":user.firstname + " " + user.lastname, "wishes":wishlist},"message":"Success"})
         else:
             response = jsonify({"error":"1","data":{},"message":"Unable to get wishes"})
-        return response
-    else:
-        user = db.session.query(UserProfile).filter_by(id=userid).first()
-        json_data = json.loads(request.data)
-        wish = Wish(user.id,json_data.get('url'),json_data.get('thumbnail'),json_data.get('title'),json_data.get('description'))
-        if wish:
-            db.session.add(wish)
-            db.session.commit()
-            response = jsonify({"error":"null","data":{'userid':userid,'url':json_data.get('url'),'thumbnail':wish.thumbnail,'title':json_data.get('title'),'description':json_data.get('description')},"message":"Success"})
-        else:
-            response = jsonify({"error":"1", "data":{},'message':'did not create wish'})
-        return response    
+    return render_template('wishlist.html', wishes=wishes, userid=userid, form=form, form2=form2)
 
 #NEEDS WORK - Avoiding for now
 @app.route('/api/users/<userid>/wishlist/<itemid>', methods=["DELETE"])
@@ -147,8 +171,8 @@ def removeWish(userid, itemid):
 ###
 @app.route('/api/thumbnails/', methods=["GET"])
 def imgs():
-    url = "http://s5.photobucket.com/"
-    #url = request.args.get('url')
+    #url = "http://s5.photobucket.com/"
+    url = request.args.get('url')
     soup = BeautifulSoup.BeautifulSoup(requests.get(url).text)
     images = BeautifulSoup.BeautifulSoup(requests.get(url).text).findAll("img")
     imagelist = []    
